@@ -5,7 +5,7 @@
 # appname: "app"
 
 # Specify the command to run after builds done
-run_cmd: "go test -v ./..."
+run_cmd: ["go", "test", "-v", "./..."]
 
 # Specify the directory where the compiled object files are stored
 # output: /bin/app
