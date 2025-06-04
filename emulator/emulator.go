@@ -1,7 +1,9 @@
 package emulator
 
 import (
+	"errors"
 	"io"
+	"os"
 	"time"
 )
 
@@ -40,12 +42,90 @@ func NewEmulatorFromBuf(buf io.Reader, clockSpeed time.Duration) (Emulator, erro
 	return c, err
 }
 
+// -- *chip8 public implementation
+
+// LoadFile loads a ROM file into memory.
+func (c *chip8) LoadFile(path string) error {
+	fd, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer fd.Close()
+
+	return c.LoadBuffer(fd)
+}
+
+// LoadBuffer takes ROM data and puts it into memory
+func (c *chip8) LoadBuffer(buf io.Reader) error {
+	rom, err := io.ReadAll(buf)
+	if err != nil {
+		return err
+	}
+
+	// Check that the ROM size does not exceed available memory
+	if len(rom) > int(rom_start+len(c.mem)) {
+		return errors.New("ROM is too large to fit in memory")
+	}
+
+	// Copy the ROM data into memory starting at rom_start
+	copy(c.mem[rom_start:], rom)
+
+	return nil
+}
+
+// Cycle runs one emulation cycle.
+func (c *chip8) Cycle() error {
+	return nil
+}
+
+// Run runs the emulator.
+func (c *chip8) Run() {
+	// Create a new signal channel, in case the old one was closed
+	c.done = make(chan bool)
+
+	// Decrement the timers separately from the system clock
+	go func() {
+		for {
+			select {
+			case <-c.timerClock.C:
+				c.timerTick()
+			case <-c.done:
+				return
+			}
+		}
+	}()
+
+	// Run Cycle on system clock tick, or exit if stopped
+	for {
+		select {
+		case <-c.clock.C:
+			c.Cycle()
+		case <-c.done:
+			return
+		}
+	}
+}
+
+// Stop stops the background emulation process
+func (c *chip8) Stop() {
+	close(c.done)
+}
+
 func baseChip8(clockSpeed time.Duration) *chip8 {
 	c := &chip8{}
-	c.clock = time.NewTicker(clockSpeed)
-	// Separately from the system clock, the timers decrement at 60hz
-	c.timerClock = time.NewTicker(TIMER_SPEED)
+
+	// Bring font data into memory
 	c.loadFont()
+
+	// Clock speeds varied over the years and different games
+	// expect different system clocks
+	c.clock = time.NewTicker(clockSpeed)
+
+	// The timers decrement indepently of the system clock
+	c.timerClock = time.NewTicker(TIMER_SPEED)
+
+	// Traditionally there would be a bootloader here that sets this
+	c.pc = rom_start
 
 	return c
 }

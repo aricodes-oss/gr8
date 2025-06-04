@@ -1,9 +1,7 @@
 package emulator
 
 import (
-	"errors"
-	"io"
-	"os"
+	"encoding/binary"
 	"time"
 )
 
@@ -31,7 +29,7 @@ type chip8 struct {
 	timerClock *time.Ticker
 
 	// General-purpose variable registers
-	v []byte
+	v [16]byte
 
 	// Clock signal, typically set at 60hz
 	clock *time.Ticker
@@ -40,69 +38,27 @@ type chip8 struct {
 	done chan bool
 }
 
-// LoadBuffer takes ROM data and puts it into memory
-func (c *chip8) LoadBuffer(buf io.Reader) error {
-	rom, err := io.ReadAll(buf)
-	if err != nil {
-		return err
-	}
-
-	// Check that the ROM size does not exceed available memory
-	if len(rom) > int(rom_start+len(c.mem)) {
-		return errors.New("ROM is too large to fit in memory")
-	}
-
-	// Copy the ROM data into memory starting at rom_start
-	copy(c.mem[rom_start:], rom)
-
-	return nil
+// opcode returns the full 2-byte instruction
+func (c *chip8) opcode() uint16 {
+	return binary.BigEndian.Uint16(c.mem[c.pc : c.pc+2])
 }
 
-// LoadFile loads a ROM file into memory.
-func (c *chip8) LoadFile(path string) error {
-	fd, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer fd.Close()
-
-	return c.LoadBuffer(fd)
+// The second opcode nibble
+func (c *chip8) x() uint8 {
+	return uint8((c.opcode() & 0x0F00) >> 8)
 }
 
-// Cycle runs one emulation cycle.
-func (c *chip8) Cycle() error {
-	return nil
+// Register V[x]
+func (c *chip8) vx() uint8 {
+	return c.v[c.x()]
 }
 
-// Run runs the emulator.
-func (c *chip8) Run() {
-	// Create a new signal channel, in case the old one was closed
-	c.done = make(chan bool)
-
-	// Decrement the timers separately from the system clock
-	go func() {
-		for {
-			select {
-			case <-c.timerClock.C:
-				c.timerTick()
-			case <-c.done:
-				return
-			}
-		}
-	}()
-
-	// Run Cycle on system clock tick, or exit if stopped
-	for {
-		select {
-		case <-c.clock.C:
-			c.Cycle()
-		case <-c.done:
-			return
-		}
-	}
+// The third opcode nibble
+func (c *chip8) y() uint8 {
+	return uint8((c.opcode() & 0x00F0) >> 4)
 }
 
-// Stop stops the background emulation process
-func (c *chip8) Stop() {
-	close(c.done)
+// Register V[y]
+func (c *chip8) vy() uint8 {
+	return c.v[c.y()]
 }
