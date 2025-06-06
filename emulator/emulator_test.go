@@ -13,7 +13,7 @@ var rom = roms.Chip8Logo
 
 func TestRomLoads(t *testing.T) {
 	c, assert := setup(t)
-	assert.ElementsMatch(c.mem[rom_start:rom_start+len(rom)], roms.Chip8Logo)
+	assert.ElementsMatch(c.mem[ROM_START:ROM_START+len(rom)], roms.Chip8Logo)
 }
 
 func TestTimerDecrements(t *testing.T) {

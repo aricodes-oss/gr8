@@ -63,18 +63,23 @@ func (c *chip8) LoadBuffer(buf io.Reader) error {
 	}
 
 	// Check that the ROM size does not exceed available memory
-	if len(rom) > int(rom_start+len(c.mem)) {
+	if len(rom) > int(ROM_START+len(c.mem)) {
 		return errors.New("ROM is too large to fit in memory")
 	}
 
 	// Copy the ROM data into memory starting at rom_start
-	copy(c.mem[rom_start:], rom)
+	copy(c.mem[ROM_START:], rom)
 
 	return nil
 }
 
 // Cycle runs one emulation cycle.
 func (c *chip8) Cycle() error {
+	err := c.dispatch(c.opcode())
+	if err != nil {
+		return err
+	}
+	c.pc += 2
 	return nil
 }
 
@@ -125,7 +130,7 @@ func baseChip8(clockSpeed time.Duration) *chip8 {
 	c.timerClock = time.NewTicker(TIMER_SPEED)
 
 	// Traditionally there would be a bootloader here that sets this
-	c.pc = rom_start
+	c.pc = ROM_START
 
 	return c
 }
