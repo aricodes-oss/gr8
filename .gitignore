@@ -28,3 +28,6 @@ go.work
 
 # Application binary
 gr8
+
+# Debugger output
+debug.test*

@@ -2,6 +2,7 @@ package emulator
 
 import (
 	"encoding/binary"
+	"math/rand/v2"
 	"time"
 )
 
@@ -10,7 +11,7 @@ const DISPLAY_HEIGHT = 32
 const DISPLAY_SIZE = DISPLAY_WIDTH * DISPLAY_HEIGHT
 
 const MEM_SIZE = 4 * 1024
-const ROM_START = 0x200
+const ROM_START = uint16(0x200)
 
 type chip8 struct {
 	// 4kb of Internal memory
@@ -36,7 +37,7 @@ type chip8 struct {
 	// General-purpose variable registers
 	v [16]byte
 
-	// Clock signal, typically set at 60hz
+	// Clock signal, typically set at 700 IPS (or one every 1.5ms)
 	clock *time.Ticker
 
 	// Keypad state (16 keys)
@@ -44,6 +45,9 @@ type chip8 struct {
 
 	// Shutdown channel, for asynchronous operation
 	done chan bool
+
+	// RNG generator
+	rng *rand.Rand
 }
 
 // opcode returns the full 2-byte instruction
@@ -69,6 +73,11 @@ func (c *chip8) y() uint8 {
 // Register V[y]
 func (c *chip8) vy() uint8 {
 	return c.v[c.y()]
+}
+
+// Register V[0xF]
+func (c *chip8) vf() uint8 {
+	return c.v[0xF]
 }
 
 // The 4th nibble

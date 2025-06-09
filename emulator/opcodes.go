@@ -2,7 +2,6 @@ package emulator
 
 import (
 	"fmt"
-	"math/rand"
 )
 
 var ErrInvalidOpcode = fmt.Errorf("invalid opcode")
@@ -98,25 +97,25 @@ func (c *chip8) dispatch(opcode uint16) error {
 
 // CLS clears the display.
 func (c *chip8) CLS() {
-	for i := range c.display {
+	for i := range DISPLAY_SIZE {
 		c.display[i] = false
 	}
 }
 
 // RET returns from subroutine.
 func (c *chip8) RET() {
-	c.pc, c.stack = c.stack[len(c.stack)], c.stack[:len(c.stack)-1]
+	c.pc, c.stack = c.stack[len(c.stack)-1]-2, c.stack[:len(c.stack)]
 }
 
 // JMP jumps to nnn.
 func (c *chip8) JMP() {
-	c.pc = c.nnn()
+	c.pc = c.nnn() - 2
 }
 
 // CALL calls subroutine at nnn.
 func (c *chip8) CALL() {
-	c.stack = append(c.stack, c.pc)
-	c.pc = c.nnn()
+	c.stack = append(c.stack, c.pc+2)
+	c.pc = c.nnn() - 2
 }
 
 // SEVx skips next instruction if Vx == nn.
@@ -133,7 +132,7 @@ func (c *chip8) SNEVx() {
 	}
 }
 
-// SEVxVy skips next instruction if Vx == Vy
+// SEVxVy skips next instruction if Vx == Vy.
 func (c *chip8) SEVxVy() {
 	if c.vx() == c.vy() {
 		c.pc += 2
@@ -167,7 +166,7 @@ func (c *chip8) ANDVxVy() {
 
 // XORVxVy sets Vx ^= Vy.
 func (c *chip8) XORVxVy() {
-	c.v[c.x()] ^= c.y()
+	c.v[c.x()] ^= c.vy()
 }
 
 // ADDVxVy sets Vx += Vy, sets VF on carry.
@@ -186,7 +185,7 @@ func (c *chip8) SUBVxVy() {
 		c.v[0xF] = 1
 	}
 
-	c.v[c.x()] -= c.vy()
+	c.v[c.x()] = max(0, c.vx()-c.vy())
 }
 
 // SHRVx sets Vx=Vx>>1, sets VF if least-significant bit is 1.
@@ -225,19 +224,19 @@ func (c *chip8) LDI() {
 
 // JPV jumps to location nnn + V0.
 func (c *chip8) JPV() {
-	c.pc = c.nnn() + uint16(c.v[0])
+	c.pc = c.nnn() + uint16(c.v[0]) - 2
 }
 
 // RNDVx sets Vx = (random) & nn.
 func (c *chip8) RNDVx() {
-	c.v[c.x()] = uint8(rand.Uint32()) & c.nn()
+	c.v[c.x()] = uint8(c.rng.Uint32()) & c.nn()
 }
 
 // DRW draws n-byte sprite starting at memory location i at (Vx, Vy)
 // and sets VF on collision.
 func (c *chip8) DRW() {
 	// Coordinates of the sprite on screen
-	x, y := c.vx()%DISPLAY_WIDTH, c.vy()%DISPLAY_HEIGHT
+	x, y := c.vx(), c.vy()
 
 	// Clear collision flag
 	c.v[0xF] = 0
@@ -247,29 +246,23 @@ func (c *chip8) DRW() {
 		row := c.mem[c.i+uint16(offset)]
 
 		// Draw each bit in the row to the screen
-		for bit := range 8 {
+		for col := range 8 {
 			// Convert coordinate to linear index
-			index := int(y)*DISPLAY_WIDTH + (int(x) + bit)
-			spritePixel := row&(1<<bit) != 0
+			index := (int(y+offset) * DISPLAY_WIDTH) + int(x) + col
+			spritePixel := row&(0x80>>col) != 0
 
 			// If we try to draw past the right edge or out of bounds,
 			// stop processing this row
-			if int(x)+bit > DISPLAY_WIDTH || index >= DISPLAY_SIZE {
-				break
+			if index >= DISPLAY_SIZE {
+				continue
 			}
 
 			displayPixel := c.display[index]
-
-			// If we are colliding, set VF and clear pixel
 			if displayPixel && spritePixel {
-				c.display[index] = false
 				c.v[0xF] = 1
-			} else {
-				c.display[index] = spritePixel
 			}
+			c.display[index] = displayPixel != spritePixel
 		}
-
-		y += 1
 	}
 }
 
@@ -295,8 +288,8 @@ func (c *chip8) LDVxDT() {
 // LDVxK waits for a keypress and stores the value of the key in Vx.
 func (c *chip8) LDVxK() {
 	for key := range uint8(16) {
-		if c.keypad.Pressed(key) {
-			c.v[c.x()] = key
+		if c.keypad.Pressed(key + 1) {
+			c.v[c.x()] = key + 1
 			return
 		}
 	}
@@ -322,7 +315,7 @@ func (c *chip8) ADDIVx() {
 
 // LDFVx sets i = address for sprite to digit Vx.
 func (c *chip8) LDFVx() {
-	c.i = uint16(c.mem[FONT_START+c.vx()*5])
+	c.i = uint16(FONT_START + c.vx()*5)
 }
 
 // LDBVx stores the decimal digits of Vx in memory locations [i:i+2] (BCD).
@@ -336,10 +329,10 @@ func (c *chip8) LDBVx() {
 
 // LDIVx stores registers V0-Vx in memory starting at i.
 func (c *chip8) LDIVx() {
-	copy(c.mem[c.i:], c.v[:c.x()])
+	copy(c.mem[c.i:], c.v[:c.x()+1])
 }
 
 // LDVxI stores memory starting at i into register V0-Vx.
 func (c *chip8) LDVxI() {
-	copy(c.v[:], c.mem[c.i:c.i+uint16(c.x())])
+	copy(c.v[:], c.mem[c.i:c.i+uint16(c.x()+1)])
 }

@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/color"
 	"io"
+	"math/rand/v2"
 	"os"
 	"time"
 )
@@ -68,7 +69,7 @@ func (c *chip8) LoadBuffer(buf io.Reader) error {
 	}
 
 	// Check that the ROM size does not exceed available memory
-	if len(rom) > int(ROM_START+len(c.mem)) {
+	if len(rom) > int(ROM_START+uint16(len(c.mem))) {
 		return errors.New("ROM is too large to fit in memory")
 	}
 
@@ -123,13 +124,16 @@ func (c *chip8) Stop() {
 
 func (c *chip8) Draw(image *image.RGBA) {
 	for idx, pixel := range c.display {
-		pixelColor := color.Black
-		if pixel {
-			pixelColor = color.White
-		}
-
-		image.Set(idx%DISPLAY_WIDTH, idx/DISPLAY_HEIGHT, pixelColor)
+		image.Set(idx%DISPLAY_WIDTH, idx/DISPLAY_WIDTH, colorFor(pixel))
 	}
+}
+
+func colorFor(pixel bool) color.Color {
+	if pixel {
+		return color.White
+	}
+
+	return color.Black
 }
 
 func baseChip8(clockSpeed time.Duration) *chip8 {
@@ -145,8 +149,13 @@ func baseChip8(clockSpeed time.Duration) *chip8 {
 	// The timers decrement indepently of the system clock
 	c.timerClock = time.NewTicker(TIMER_SPEED)
 
+	c.rng = rand.New(rand.NewPCG(uint64(time.Now().Unix()), 0))
+
 	// Traditionally there would be a bootloader here that sets this
 	c.pc = ROM_START
+
+	// Blank out all keypad bits
+	c.keypad = keypad(0)
 
 	return c
 }
