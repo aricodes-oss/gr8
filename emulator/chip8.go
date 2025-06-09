@@ -5,8 +5,11 @@ import (
 	"time"
 )
 
+const DISPLAY_WIDTH = 64
+const DISPLAY_HEIGHT = 32
+const DISPLAY_SIZE = DISPLAY_WIDTH * DISPLAY_HEIGHT
+
 const MEM_SIZE = 4 * 1024
-const DISPLAY_SIZE = 64 * 32
 const ROM_START = 0x200
 
 type chip8 struct {
@@ -35,6 +38,9 @@ type chip8 struct {
 
 	// Clock signal, typically set at 60hz
 	clock *time.Ticker
+
+	// Keypad state (16 keys)
+	keypad keypad
 
 	// Shutdown channel, for asynchronous operation
 	done chan bool

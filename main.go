@@ -21,8 +21,11 @@ THE SOFTWARE.
 */
 package main
 
-import "gr8/cmd"
+import (
+	"github.com/gopxl/pixel/v2/backends/opengl"
+	"gr8/cmd"
+)
 
 func main() {
-	cmd.Execute()
+	opengl.Run(cmd.Execute)
 }

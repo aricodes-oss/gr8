@@ -1,6 +1,6 @@
 package emulator
 
-const font_start = 0x50
+const FONT_START = 0x50
 
 var FONT = [5 * 16]byte{
 	0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -22,5 +22,5 @@ var FONT = [5 * 16]byte{
 }
 
 func (c *chip8) loadFont() {
-	copy(c.mem[font_start:], FONT[:])
+	copy(c.mem[FONT_START:], FONT[:])
 }

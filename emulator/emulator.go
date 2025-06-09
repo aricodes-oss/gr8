@@ -2,6 +2,8 @@ package emulator
 
 import (
 	"errors"
+	"image"
+	"image/color"
 	"io"
 	"os"
 	"time"
@@ -24,6 +26,9 @@ type Emulator interface {
 
 	// Stop stops the background emulation process.
 	Stop()
+
+	// Draw draws the display buffer to an *image.RGBA.
+	Draw(image *image.RGBA)
 }
 
 // NewEmulator takes a path to a ROM file and returns an Emulator with that ROM loaded.
@@ -77,7 +82,7 @@ func (c *chip8) LoadBuffer(buf io.Reader) error {
 func (c *chip8) Cycle() error {
 	err := c.dispatch(c.opcode())
 	if err != nil {
-		return err
+		panic(err)
 	}
 	c.pc += 2
 	return nil
@@ -114,6 +119,17 @@ func (c *chip8) Run() {
 // Stop stops the background emulation process
 func (c *chip8) Stop() {
 	close(c.done)
+}
+
+func (c *chip8) Draw(image *image.RGBA) {
+	for idx, pixel := range c.display {
+		pixelColor := color.Black
+		if pixel {
+			pixelColor = color.White
+		}
+
+		image.Set(idx%DISPLAY_WIDTH, idx/DISPLAY_HEIGHT, pixelColor)
+	}
 }
 
 func baseChip8(clockSpeed time.Duration) *chip8 {

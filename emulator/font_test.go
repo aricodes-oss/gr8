@@ -13,5 +13,5 @@ func TestFontLoads(t *testing.T) {
 	emu, _ := NewEmulatorFromBuf(bytes.NewReader(roms.Chip8Logo), DEFAULT_CLOCK_SPEED)
 	c := emu.(*chip8)
 
-	assert.ElementsMatch(c.mem[font_start:font_start+len(FONT)], FONT)
+	assert.ElementsMatch(c.mem[FONT_START:FONT_START+len(FONT)], FONT)
 }
