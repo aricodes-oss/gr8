@@ -79,6 +79,7 @@ var rootCmd = &cobra.Command{
 		for !win.Closed() {
 			chip8.Draw(display)
 			pictureData = pixel.PictureDataFromImage(display)
+			texture = pixel.NewSprite(pictureData, pictureData.Rect)
 			texture.Draw(win, pixel.IM.Scaled(pixel.ZV, float64(Scale)).Moved(win.Bounds().Center()))
 
 			win.Update()

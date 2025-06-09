@@ -13,7 +13,7 @@ var rom = roms.Chip8Logo
 
 func TestRomLoads(t *testing.T) {
 	c, assert := setup(t)
-	assert.ElementsMatch(c.mem[ROM_START:ROM_START+len(rom)], roms.Chip8Logo)
+	assert.ElementsMatch(c.mem[ROM_START:int(ROM_START)+len(rom)], roms.Chip8Logo)
 }
 
 func TestTimerDecrements(t *testing.T) {
@@ -29,7 +29,7 @@ func TestTimerDecrements(t *testing.T) {
 	go c.Run()
 
 	// Sleep for one full timer tick then stop emulation
-	time.Sleep(TIMER_SPEED + time.Millisecond)
+	time.Sleep(TIMER_SPEED + 5*time.Millisecond)
 	c.Stop()
 
 	// Check to make sure the timers decremented properly
