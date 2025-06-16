@@ -104,7 +104,7 @@ func (c *chip8) CLS() {
 
 // RET returns from subroutine.
 func (c *chip8) RET() {
-	c.pc, c.stack = c.stack[len(c.stack)-1]-2, c.stack[:len(c.stack)]
+	c.pc, c.stack = c.stack[len(c.stack)-1]-2, c.stack[:len(c.stack)-1]
 }
 
 // JMP jumps to nnn.
@@ -151,7 +151,7 @@ func (c *chip8) ADD() {
 
 // LDVxVy sets Vx = Vy.
 func (c *chip8) LDVxVy() {
-	c.v[c.y()] = c.vx()
+	c.v[c.x()] = c.vy()
 }
 
 // ORVxVy sets Vx |= Vy.
@@ -172,42 +172,56 @@ func (c *chip8) XORVxVy() {
 // ADDVxVy sets Vx += Vy, sets VF on carry.
 func (c *chip8) ADDVxVy() {
 	result := int(c.vx()) + int(c.vy())
+	carry := result > 255
+
 	c.v[c.x()] = byte(result)
-	if result > 255 {
+	if carry {
 		c.v[0xF] = 1
+	} else {
+		c.v[0xF] = 0
 	}
 }
 
 // SUBVxVy sets Vx -= Vy, sets VF if NOT borrow.
 func (c *chip8) SUBVxVy() {
-	c.v[0xF] = 0
-	if c.vx() > c.vy() {
-		c.v[0xF] = 1
-	}
+	borrow := c.vx() < c.vy()
 
 	c.v[c.x()] = max(0, c.vx()-c.vy())
+	if !borrow {
+		c.v[0xF] = 1
+	} else {
+		c.v[0xF] = 0
+	}
 }
 
 // SHRVx sets Vx=Vx>>1, sets VF if least-significant bit is 1.
 func (c *chip8) SHRVx() {
-	c.v[0xF] = c.vx() & 0x01
+	flag := c.vx() & 0x01
 	c.v[c.x()] = c.vx() >> 1
+	c.v[0xF] = flag
 }
 
 // SUBNVxVy sets Vx = Vy - Vx, sets VF if NOT carry.
 func (c *chip8) SUBNVxVy() {
-	c.v[0xF] = 0
-	if c.vy() > c.vx() {
-		c.v[0xF] = 1
-	}
+	carry := c.vy() < c.vx()
 
 	c.v[c.x()] = c.vy() - c.vx()
+	if !carry {
+		c.v[0xF] = 1
+	} else {
+		c.v[0xF] = 0
+	}
 }
 
 // SHLVx sets Vx=Vx<<1, sets VF if most-significant bit is 1.
 func (c *chip8) SHLVx() {
-	c.v[0xF] = c.vx() & 0x80
+	flag := c.vx() & 0x80
 	c.v[c.x()] = c.vx() << 1
+	if flag != 0 {
+		c.v[0xF] = 1
+	} else {
+		c.v[0xF] = 0
+	}
 }
 
 // SNEVxVy skips next instruction if Vx != Vy.

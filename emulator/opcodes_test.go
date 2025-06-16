@@ -37,9 +37,11 @@ func TestRET(t *testing.T) {
 
 	c.stack = append(c.stack, newAddr)
 	assert.Equal(ROM_START, c.pc)
+	assert.Greater(len(c.stack), 0)
 
 	c.Cycle()
 	assert.Equal(newAddr, c.pc)
+	assert.Equal(len(c.stack), 0)
 }
 
 // 0x1nnn
@@ -60,8 +62,9 @@ func TestCALL(t *testing.T) {
 
 	assert.Equal(0, len(c.stack))
 	c.Cycle()
-	assert.Equal(ROM_START, c.stack[0])
+	assert.Equal(ROM_START+2, c.stack[0])
 	assert.Equal(newAddr, c.pc)
+	assert.Equal(1, len(c.stack))
 }
 
 // 0x3xnn
@@ -115,9 +118,14 @@ func TestLDVxVy(t *testing.T) {
 	c, assert := opcodeTest(t, []byte{0x80, 0x10})
 	c.v[c.x()] = 255
 
+	initialX := c.vy()
+
 	assert.NotEqual(c.vx(), c.vy())
 	c.Cycle()
 	assert.Equal(c.v[0], c.v[1])
+
+	// Check that X was copied to Y
+	assert.Equal(c.v[0], initialX)
 }
 
 // 0x8xy1

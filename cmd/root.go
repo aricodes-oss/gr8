@@ -91,7 +91,6 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	rootCmd.Flags().IntVarP(&Scale, "scale", "s", 16, "screen scaling factor")
-
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
