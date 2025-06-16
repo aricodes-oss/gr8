@@ -29,7 +29,7 @@ func TestTimerDecrements(t *testing.T) {
 	go c.Run()
 
 	// Sleep for one full timer tick then stop emulation
-	time.Sleep(TIMER_SPEED + 5*time.Millisecond)
+	time.Sleep(DEFAULT_CLOCK_SPEED + 5*time.Millisecond)
 	c.Stop()
 
 	// Check to make sure the timers decremented properly

@@ -3,6 +3,7 @@ module gr8
 go 1.24.3
 
 require (
+	github.com/gammazero/deque v1.0.0
 	github.com/gopxl/pixel/v2 v2.3.0
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0

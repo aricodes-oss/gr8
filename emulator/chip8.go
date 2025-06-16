@@ -2,13 +2,19 @@ package emulator
 
 import (
 	"encoding/binary"
+	"image"
 	"math/rand/v2"
 	"time"
+
+	"github.com/gammazero/deque"
 )
 
 const DISPLAY_WIDTH = 64
 const DISPLAY_HEIGHT = 32
 const DISPLAY_SIZE = DISPLAY_WIDTH * DISPLAY_HEIGHT
+
+const DEFAULT_CLOCK_SPEED = 16 * time.Millisecond // 60hz
+const DEFAULT_IPF = 700                           // 700 instructions per frame
 
 const MEM_SIZE = 4 * 1024
 const ROM_START = uint16(0x200)
@@ -29,16 +35,18 @@ type chip8 struct {
 	// Stack
 	stack []uint16
 
-	// Timers, decremented every 60hz independently of the system clock
+	// Timers, decremented every 60hz
 	delayTimer byte
 	soundTimer byte
-	timerClock *time.Ticker
 
 	// General-purpose variable registers
 	v [16]byte
 
-	// Clock signal, typically set at 700 IPS (or one every 1.5ms)
+	// Clock signal, typically set at 60fps
 	clock *time.Ticker
+
+	// Instructions to process per frame
+	ipf int
 
 	// Keypad state (16 keys)
 	keypad keypad
@@ -48,6 +56,9 @@ type chip8 struct {
 
 	// RNG generator
 	rng *rand.Rand
+
+	// Frame buffer
+	frameBuf deque.Deque[*image.RGBA]
 }
 
 // opcode returns the full 2-byte instruction

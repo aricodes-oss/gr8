@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const DEFAULT_CLOCK_SPEED = 1428 * time.Microsecond // Roughly 700 instructions/second
+const FRAME_BUFFER_LENGTH = 3
 
 type Emulator interface {
 	// LoadFile loads a ROM file from disk into emulator memory.
@@ -19,7 +19,7 @@ type Emulator interface {
 	// LoadBuffer loads a ROM file from a buffer into emulator memory.
 	LoadBuffer(buf io.Reader) error
 
-	// Cycle runs one emulation cycle.
+	// Cycle runs one CPU cycle.
 	Cycle() error
 
 	// Run runs the emulator in the background. Call Stop() to end it.
@@ -28,8 +28,8 @@ type Emulator interface {
 	// Stop stops the background emulation process.
 	Stop()
 
-	// Draw draws the display buffer to an *image.RGBA.
-	Draw(image *image.RGBA)
+	// Frame returns the most recent frame from the display buffer
+	Frame() *image.RGBA
 }
 
 // NewEmulator takes a path to a ROM file and returns an Emulator with that ROM loaded.
@@ -94,23 +94,24 @@ func (c *chip8) Run() {
 	// Create a new signal channel, in case the old one was closed
 	c.done = make(chan bool)
 
-	// Decrement the timers separately from the system clock
-	go func() {
-		for {
-			select {
-			case <-c.timerClock.C:
-				c.timerTick()
-			case <-c.done:
-				return
-			}
-		}
-	}()
-
 	// Run Cycle on system clock tick, or exit if stopped
 	for {
+		// Allocate a new frame before checking waiting for clock, in the likely
+		// scenario that we beat the clock signal
+		frame := image.NewRGBA(image.Rect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT))
+
 		select {
 		case <-c.clock.C:
-			c.Cycle()
+			// TODO: 1. Input
+			// 2. Timers
+			c.timerTick()
+			// 3. Exec
+			for range c.ipf {
+				c.Cycle()
+			}
+			// 4. Repaint
+			c.draw(frame)
+			c.frameBuf.PushBack(frame)
 		case <-c.done:
 			return
 		}
@@ -122,7 +123,21 @@ func (c *chip8) Stop() {
 	close(c.done)
 }
 
-func (c *chip8) Draw(image *image.RGBA) {
+// Stop returns the most recent frame from the display buffer
+func (c *chip8) Frame() *image.RGBA {
+	if c.frameBuf.Len() == 0 {
+		return nil
+	}
+
+	// Drop unnecessary frames from the frame buffer
+	for c.frameBuf.Len() > FRAME_BUFFER_LENGTH+1 {
+		c.frameBuf.PopFront()
+	}
+
+	return c.frameBuf.PopBack()
+}
+
+func (c *chip8) draw(image *image.RGBA) {
 	for idx, pixel := range c.display {
 		image.Set(idx%DISPLAY_WIDTH, idx/DISPLAY_WIDTH, colorFor(pixel))
 	}
@@ -145,9 +160,7 @@ func baseChip8(clockSpeed time.Duration) *chip8 {
 	// Clock speeds varied over the years and different games
 	// expect different system clocks
 	c.clock = time.NewTicker(clockSpeed)
-
-	// The timers decrement indepently of the system clock
-	c.timerClock = time.NewTicker(TIMER_SPEED)
+	c.ipf = DEFAULT_IPF
 
 	c.rng = rand.New(rand.NewPCG(uint64(time.Now().Unix()), 0))
 
@@ -156,6 +169,9 @@ func baseChip8(clockSpeed time.Duration) *chip8 {
 
 	// Blank out all keypad bits
 	c.keypad = keypad(0)
+
+	// Set our frame buffer minimum length
+	c.frameBuf.SetBaseCap(FRAME_BUFFER_LENGTH)
 
 	return c
 }

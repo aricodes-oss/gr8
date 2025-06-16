@@ -22,7 +22,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"image"
 	"os"
 
 	"gr8/emulator"
@@ -69,17 +68,15 @@ var rootCmd = &cobra.Command{
 		go chip8.Run()
 		defer chip8.Stop()
 
-		// Raw pixel grid
-		display := image.NewRGBA(image.Rect(0, 0, emulator.DISPLAY_WIDTH, emulator.DISPLAY_HEIGHT))
-		pictureData := pixel.PictureDataFromImage(display)
-
-		// Output texture
-		texture := pixel.NewSprite(pictureData, pictureData.Rect)
-
 		for !win.Closed() {
-			chip8.Draw(display)
-			pictureData = pixel.PictureDataFromImage(display)
-			texture = pixel.NewSprite(pictureData, pictureData.Rect)
+			frame := chip8.Frame()
+			if frame == nil {
+				win.Update()
+				continue
+			}
+
+			pictureData := pixel.PictureDataFromImage(frame)
+			texture := pixel.NewSprite(pictureData, pictureData.Rect)
 			texture.Draw(win, pixel.IM.Scaled(pixel.ZV, float64(Scale)).Moved(win.Bounds().Center()))
 
 			win.Update()
