@@ -69,8 +69,15 @@ var rootCmd = &cobra.Command{
 		defer chip8.Stop()
 
 		for !win.Closed() {
+      for code, key := range emulator.Keybinds {
+        if win.JustPressed(key) {
+          chip8.Press(uint8(code))
+        } else if win.JustReleased(key) {
+          chip8.Release(uint8(code))
+        }
+      }
 			frame := chip8.Frame()
-			if frame == nil {
+			if frame == nil{
 				win.Update()
 				continue
 			}

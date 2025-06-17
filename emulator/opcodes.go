@@ -157,16 +157,19 @@ func (c *chip8) LDVxVy() {
 // ORVxVy sets Vx |= Vy.
 func (c *chip8) ORVxVy() {
 	c.v[c.x()] |= c.vy()
+  c.v[0xF] = 0
 }
 
 // ANDVxVy sets Vx &= Vy.
 func (c *chip8) ANDVxVy() {
 	c.v[c.x()] &= c.vy()
+  c.v[0xF] = 0
 }
 
 // XORVxVy sets Vx ^= Vy.
 func (c *chip8) XORVxVy() {
 	c.v[c.x()] ^= c.vy()
+  c.v[0xF] = 0
 }
 
 // ADDVxVy sets Vx += Vy, sets VF on carry.
@@ -250,7 +253,7 @@ func (c *chip8) RNDVx() {
 // and sets VF on collision.
 func (c *chip8) DRW() {
 	// Coordinates of the sprite on screen
-	x, y := c.vx(), c.vy()
+	x, y := c.vx()%64, c.vy()%32
 
 	// Clear collision flag
 	c.v[0xF] = 0
@@ -282,14 +285,14 @@ func (c *chip8) DRW() {
 
 // SKPVx skips next instruction if key with the value of Vx is pressed.
 func (c *chip8) SKPVx() {
-	if c.keypad.Pressed(c.vx()) {
+	if c.frameKeys.Pressed(c.vx()) {
 		c.pc += 2
 	}
 }
 
 // SKNPVx skips next instruction if key with the value of Vx is NOT pressed.
 func (c *chip8) SKNPVx() {
-	if !c.keypad.Pressed(c.vx()) {
+	if !c.frameKeys.Pressed(c.vx()) {
 		c.pc += 2
 	}
 }
@@ -302,7 +305,7 @@ func (c *chip8) LDVxDT() {
 // LDVxK waits for a keypress and stores the value of the key in Vx.
 func (c *chip8) LDVxK() {
 	for key := range uint8(16) {
-		if c.keypad.Pressed(key + 1) {
+		if c.frameKeys.Pressed(key + 1) {
 			c.v[c.x()] = key + 1
 			return
 		}
@@ -344,9 +347,11 @@ func (c *chip8) LDBVx() {
 // LDIVx stores registers V0-Vx in memory starting at i.
 func (c *chip8) LDIVx() {
 	copy(c.mem[c.i:], c.v[:c.x()+1])
+  c.i += uint16(c.x())
 }
 
 // LDVxI stores memory starting at i into register V0-Vx.
 func (c *chip8) LDVxI() {
 	copy(c.v[:], c.mem[c.i:c.i+uint16(c.x()+1)])
+  c.i += uint16(c.x())
 }

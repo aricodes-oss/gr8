@@ -83,9 +83,13 @@ func (c *chip8) LoadBuffer(buf io.Reader) error {
 
 // Cycle runs one emulation cycle.
 func (c *chip8) Cycle() error {
+  // Freeze a snapshot of our keypad
+  c.frameKeys = c.keypad
+
+  // Execute
 	err := c.dispatch(c.opcode())
 	if err != nil {
-		panic(err)
+		return err
 	}
 	c.pc += 2
 	return nil
@@ -109,7 +113,10 @@ func (c *chip8) Run() {
 			c.timerTick()
 			// 3. Exec
 			for range c.ipf {
-				c.Cycle()
+				err := c.Cycle()
+        if err != nil {
+          panic(err)
+        }
 			}
 			// 4. Repaint
 			c.draw(frame)

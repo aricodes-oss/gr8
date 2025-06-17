@@ -48,8 +48,11 @@ type chip8 struct {
 	// Instructions to process per frame
 	ipf int
 
-	// Keypad state (16 keys)
-	keypad keypad
+	// Live keypad state and snapshot (16 keys)
+	keypad,
+  frameKeys keypad
+
+
 
 	// Shutdown channel, for asynchronous operation
 	done chan bool
