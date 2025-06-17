@@ -13,6 +13,8 @@ import (
 const FRAME_BUFFER_LENGTH = 3
 
 type Emulator interface {
+  Keypad
+
 	// LoadFile loads a ROM file from disk into emulator memory.
 	LoadFile(path string) error
 

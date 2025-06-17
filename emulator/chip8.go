@@ -16,7 +16,7 @@ const DISPLAY_SIZE = DISPLAY_WIDTH * DISPLAY_HEIGHT
 const DEFAULT_CLOCK_SPEED = 16 * time.Millisecond // 60hz
 const DEFAULT_IPF = 700                           // 700 instructions per frame
 
-const MEM_SIZE = 4 * 1024
+const MEM_SIZE = 4 * 1024 // 4kb
 const ROM_START = uint16(0x200)
 
 type chip8 struct {

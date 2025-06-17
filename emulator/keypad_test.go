@@ -8,10 +8,10 @@ import (
 
 func TestPress(t *testing.T) {
 	assert := assert.New(t)
-	var k keypad
+	k := keypad(0x0)
 
 	assert.Equal(keypad(0x0), k)
-	k = k.Press(1)
+	k = k.Press(1).(keypad)
 	assert.Equal(keypad(0x1), k)
 }
 

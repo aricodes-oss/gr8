@@ -300,7 +300,7 @@ func TestDRW(t *testing.T) {
 func TestSKPVx(t *testing.T) {
 	c, assert := opcodeTest(t, []byte{0xE0, 0x9E})
 
-	c.keypad = c.keypad.Press(1)
+	c.Press(1)
 	c.v[c.x()] = 1
 
 	assert.Equal(ROM_START, c.pc)
@@ -312,7 +312,7 @@ func TestSKPVx(t *testing.T) {
 func TestSKNPVx(t *testing.T) {
 	c, assert := opcodeTest(t, []byte{0xE0, 0xA1})
 
-	c.keypad = c.keypad.Press(1)
+	c.Press(1)
 	c.v[c.x()] = 1
 
 	assert.Equal(ROM_START, c.pc)
@@ -345,7 +345,7 @@ func TestLDVxK(t *testing.T) {
 	assert.Equal(ROM_START, c.pc)
 
 	// Press a key, try again
-	c.keypad = c.keypad.Press(2)
+	c.Press(2)
 	c.Cycle()
 
 	// Past the first instruction, V0 == 1
