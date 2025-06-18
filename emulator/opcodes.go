@@ -157,19 +157,19 @@ func (c *chip8) LDVxVy() {
 // ORVxVy sets Vx |= Vy.
 func (c *chip8) ORVxVy() {
 	c.v[c.x()] |= c.vy()
-  c.v[0xF] = 0
+	c.v[0xF] = 0
 }
 
 // ANDVxVy sets Vx &= Vy.
 func (c *chip8) ANDVxVy() {
 	c.v[c.x()] &= c.vy()
-  c.v[0xF] = 0
+	c.v[0xF] = 0
 }
 
 // XORVxVy sets Vx ^= Vy.
 func (c *chip8) XORVxVy() {
 	c.v[c.x()] ^= c.vy()
-  c.v[0xF] = 0
+	c.v[0xF] = 0
 }
 
 // ADDVxVy sets Vx += Vy, sets VF on carry.
@@ -199,6 +199,7 @@ func (c *chip8) SUBVxVy() {
 
 // SHRVx sets Vx=Vx>>1, sets VF if least-significant bit is 1.
 func (c *chip8) SHRVx() {
+	c.v[c.x()] = c.vy()
 	flag := c.vx() & 0x01
 	c.v[c.x()] = c.vx() >> 1
 	c.v[0xF] = flag
@@ -218,6 +219,7 @@ func (c *chip8) SUBNVxVy() {
 
 // SHLVx sets Vx=Vx<<1, sets VF if most-significant bit is 1.
 func (c *chip8) SHLVx() {
+	c.v[c.x()] = c.vy()
 	flag := c.vx() & 0x80
 	c.v[c.x()] = c.vx() << 1
 	if flag != 0 {
@@ -270,8 +272,8 @@ func (c *chip8) DRW() {
 
 			// If we try to draw past the right edge or out of bounds,
 			// stop processing this row
-			if index >= DISPLAY_SIZE {
-				continue
+			for index >= DISPLAY_SIZE {
+				index -= DISPLAY_SIZE
 			}
 
 			displayPixel := c.display[index]
@@ -305,8 +307,8 @@ func (c *chip8) LDVxDT() {
 // LDVxK waits for a keypress and stores the value of the key in Vx.
 func (c *chip8) LDVxK() {
 	for key := range uint8(16) {
-		if c.frameKeys.Pressed(key + 1) {
-			c.v[c.x()] = key + 1
+		if c.frameKeys.Pressed(key) && !c.lastFrameKeys.Pressed(key) {
+			c.v[c.x()] = key
 			return
 		}
 	}
@@ -347,11 +349,11 @@ func (c *chip8) LDBVx() {
 // LDIVx stores registers V0-Vx in memory starting at i.
 func (c *chip8) LDIVx() {
 	copy(c.mem[c.i:], c.v[:c.x()+1])
-  c.i += uint16(c.x())
+	c.i += uint16(c.x() + 1)
 }
 
 // LDVxI stores memory starting at i into register V0-Vx.
 func (c *chip8) LDVxI() {
 	copy(c.v[:], c.mem[c.i:c.i+uint16(c.x()+1)])
-  c.i += uint16(c.x())
+	c.i += uint16(c.x() + 1)
 }

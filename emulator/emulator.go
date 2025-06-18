@@ -13,7 +13,7 @@ import (
 const FRAME_BUFFER_LENGTH = 3
 
 type Emulator interface {
-  Keypad
+	Keypad
 
 	// LoadFile loads a ROM file from disk into emulator memory.
 	LoadFile(path string) error
@@ -83,10 +83,6 @@ func (c *chip8) LoadBuffer(buf io.Reader) error {
 
 // Cycle runs one emulation cycle.
 func (c *chip8) Cycle() error {
-  // Freeze a snapshot of our keypad
-  c.frameKeys = c.keypad
-
-  // Execute
 	err := c.dispatch(c.opcode())
 	if err != nil {
 		return err
@@ -108,16 +104,21 @@ func (c *chip8) Run() {
 
 		select {
 		case <-c.clock.C:
-			// TODO: 1. Input
+			// 1. Input
+			c.lastFrameKeys = c.frameKeys
+			c.frameKeys = c.keypad
+
 			// 2. Timers
 			c.timerTick()
+
 			// 3. Exec
 			for range c.ipf {
 				err := c.Cycle()
-        if err != nil {
-          panic(err)
-        }
+				if err != nil {
+					panic(err)
+				}
 			}
+
 			// 4. Repaint
 			c.draw(frame)
 			c.frameBuf.PushBack(frame)

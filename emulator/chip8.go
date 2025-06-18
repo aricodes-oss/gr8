@@ -14,7 +14,7 @@ const DISPLAY_HEIGHT = 32
 const DISPLAY_SIZE = DISPLAY_WIDTH * DISPLAY_HEIGHT
 
 const DEFAULT_CLOCK_SPEED = 16 * time.Millisecond // 60hz
-const DEFAULT_IPF = 700                           // 700 instructions per frame
+const DEFAULT_IPF = 700                           // Instructions per frame
 
 const MEM_SIZE = 4 * 1024 // 4kb
 const ROM_START = uint16(0x200)
@@ -48,11 +48,10 @@ type chip8 struct {
 	// Instructions to process per frame
 	ipf int
 
-	// Live keypad state and snapshot (16 keys)
-	keypad,
-  frameKeys keypad
-
-
+	// Keypad state (16 keys)
+	keypad, // Live
+	lastFrameKeys, // Last frame
+	frameKeys keypad // Current frame
 
 	// Shutdown channel, for asynchronous operation
 	done chan bool
