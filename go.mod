@@ -1,4 +1,4 @@
-module gr8
+module github.com/aricodes-oss/gr8
 
 go 1.24.3
 

@@ -22,8 +22,8 @@ THE SOFTWARE.
 package main
 
 import (
+	"github.com/aricodes-oss/gr8/cmd"
 	"github.com/gopxl/pixel/v2/backends/opengl"
-	"gr8/cmd"
 )
 
 func main() {

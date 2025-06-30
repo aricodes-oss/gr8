@@ -24,7 +24,7 @@ package cmd
 import (
 	"os"
 
-	"gr8/emulator"
+	"github.com/aricodes-oss/gr8/emulator"
 
 	"github.com/spf13/cobra"
 

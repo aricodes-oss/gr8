@@ -2,7 +2,7 @@ package emulator
 
 import (
 	"bytes"
-	"gr8/roms"
+	"github.com/aricodes-oss/gr8/roms"
 	"testing"
 	"time"
 
