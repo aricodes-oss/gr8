@@ -1,6 +1,9 @@
 # gr8 - a Chip-8 emulator
+[![Unit tests](https://github.com/aricodes-oss/gr8/actions/workflows/tests.yml/badge.svg)](https://github.com/aricodes-oss/gr8/actions/workflows/tests.yml)
 
-A small [Chip-8 emulator](http://devernay.free.fr/hacks/chip8/C8TECH10.HTM) written in Go. Proper README to come later, but for now -
+A small [Chip-8 emulator](http://devernay.free.fr/hacks/chip8/C8TECH10.HTM) written in Go.
+
+![Preview](https://raw.githubusercontent.com/aricodes-oss/gr8/main/gr8.gif)
 
 ## Running
 
