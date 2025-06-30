@@ -190,6 +190,7 @@ func TestSHRVx(t *testing.T) {
 	c, assert := opcodeTest(t, []byte{0x80, 0x16})
 	var initial uint8 = 0b01010101
 	c.v[c.x()] = initial
+	c.v[c.y()] = initial
 
 	assert.Equal(uint8(0), c.vf())
 	c.Cycle()
@@ -214,6 +215,7 @@ func TestSHLVx(t *testing.T) {
 	c, assert := opcodeTest(t, []byte{0x80, 0x1E})
 	var initial uint8 = 0b01010101
 	c.v[c.x()] = initial
+	c.v[c.y()] = initial
 
 	assert.Equal(uint8(0), c.vf())
 	c.Cycle()
@@ -303,6 +305,8 @@ func TestSKPVx(t *testing.T) {
 	c.Press(1)
 	c.v[c.x()] = 1
 
+	c.frameKeys = c.keypad
+
 	assert.Equal(ROM_START, c.pc)
 	c.Cycle()
 	assert.Equal(ROM_START+4, c.pc)
@@ -314,6 +318,8 @@ func TestSKNPVx(t *testing.T) {
 
 	c.Press(1)
 	c.v[c.x()] = 1
+
+	c.frameKeys = c.keypad
 
 	assert.Equal(ROM_START, c.pc)
 	c.Cycle()
@@ -334,6 +340,8 @@ func TestLDVxDT(t *testing.T) {
 func TestLDVxK(t *testing.T) {
 	c, assert := opcodeTest(t, []byte{0xF0, 0x0A})
 
+	c.frameKeys = c.keypad
+
 	// At ROM_START, no keys pressed, Vx empty
 	assert.Equal(uint8(0), c.vx())
 	assert.Equal(ROM_START, c.pc)
@@ -346,11 +354,12 @@ func TestLDVxK(t *testing.T) {
 
 	// Press a key, try again
 	c.Press(2)
+	c.frameKeys = c.keypad
 	c.Cycle()
 
-	// Past the first instruction, V0 == 1
+	// Past the first instruction, V0 == 2
 	assert.Equal(ROM_START+2, c.pc)
-	assert.Equal(uint8(1), c.v[0])
+	assert.Equal(uint8(2), c.v[0])
 }
 
 // 0xFx15
@@ -404,11 +413,12 @@ func TestLDBVx(t *testing.T) {
 // 0xFx55
 func TestLDIVx(t *testing.T) {
 	c, assert := opcodeTest(t, []byte{0xF2, 0x55})
-	c.i = ROM_START + 16
+	start := ROM_START + 16
+	c.i = start
 	copy(c.v[:], []byte{1, 2, 3})
 
 	c.Cycle()
-	assert.ElementsMatch(c.mem[c.i:c.i+3], c.v[:3])
+	assert.ElementsMatch(c.mem[start:start+3], c.v[:3])
 }
 
 // 0xFx65
